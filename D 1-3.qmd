@@ -1,0 +1,126 @@
+---
+title: "Untitled"
+Author: Terry Moore
+format: html
+editor: visual
+embed-resources: true
+---
+
+## Question 1
+
+```{r}
+#| message: false
+library(tidyverse)
+# Read in the data 
+exercise_data <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/visualize_data.csv")
+glimpse(exercise_data)
+```
+
+I think that there will be a negative relationship between peoples BMI and exercise
+
+```{r}
+cor(exercise_data$Exercise, exercise_data$BMI)
+```
+
+Since the outcome is -0.064 this proves my hypothesis to be write that there is a negative relationship between peoples BMI and exercise.
+
+```{r}
+ggplot(exercise_data, 
+       aes(x = Exercise, y = BMI)) +
+       geom_point() 
+```
+
+I see either a dinosaur or crocodile which is not what i expected.
+
+## Question 2
+
+```{r}
+#|message: false
+library(causact)
+glimpse(corruptDF)
+```
+
+```{r}
+?corruptDF
+```
+
+The CPI2017 variable indicates the public sector corruption levels in a country or territory in 2017 on a scale from 0-100. While the The HDI2017 variable tracks national progress in 2017 in the key categories of human development.
+
+## Question 3
+
+```{r}
+ggplot(corruptDF, aes(x = CPI2017, y = HDI2017)) +
+  geom_point() +
+  labs(x = "CPI", y = "HDI", title = "Relationship Between CPI and HDI in 2017")
+
+```
+
+This plot shows that there is a positive relationship between HDI and CPI in 2017.
+
+## Question 4
+
+```{r}
+ggplot(corruptDF, aes(x = CPI2017, y = HDI2017)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "CPI", y = "HDI", title = "Relationship Between CPI and HDI in 2017", subtitle = "Data Points are Associated with Countries", caption = "Sources: Transparency International and United Nations Development Programme")
+```
+
+```{r}
+ggplot(corruptDF, aes(x = CPI2017, y = HDI2017)) +
+  geom_point() +
+  geom_smooth(method = "gam", se = FALSE) +
+  labs(x = "CPI", y = "HDI", title = "Relationship Between CPI and HDI in 2017", subtitle = "Data Points are Associated with Countries", caption = "Sources: Transparency International and United Nations Development Programme")
+```
+
+The generalized additive model curves based on the data, while the linear model is linear. This is how the models differ from one another. However i find the linear model to be easier to use.
+
+## Question 5
+
+```{r}
+ggplot(corruptDF, aes(x = CPI2017, y = HDI2017, fill = region, color = region)) +
+  geom_point() +
+  geom_smooth(method = "gam", se = FALSE) +
+    labs(x = "CPI", y = "HDI", title = "Relationship Between CPI and HDI in 2017", subtitle = "Data Points are Associated with Countries", caption = "Sources: Transparency International and United Nations Development Programme")
+```
+
+In 2017, I see that the intensity of the positive correlation between CPI and HDI levels varies by location and the patterns are not very clear on the graph so i think to help solve this issue you could use the facet wrap function by region to help clear up the image.
+
+```{r}
+ggplot(corruptDF, aes(x = CPI2017, y = HDI2017, fill = region, color = region)) +
+  geom_point() +
+  geom_smooth(method = "gam", se = FALSE) +
+  labs(x = "CPI", y = "HDI", title = "Relationship Between CPI and HDI in 2017 by Region", subtitle = "Data Points are Associated with Countries", caption = "Sources: Transparency International and United Nations Development Programme") +
+  facet_wrap(~region)
+```
+
+## Question 6
+
+```{r}
+ggplot(corruptDF, aes(x = CPI2017, y = HDI2017, fill = region, color = region)) +
+  geom_point() +
+  geom_smooth(method = "gam", se = FALSE) +
+  facet_wrap(~region) +
+ labs(x = "CPI", y = "HDI", title = "Relationship Between CPI and HDI in 2017 by Region", subtitle = "Data Points are Associated with Countries", caption = "Sources: Transparency International and United Nations Development Programme") +
+  scale_x_reverse()
+```
+
+I thought the scale_x_reverse function because it shows that there is a lower human development if there is a high amount of corruption.
+
+## Question 7
+
+```{r}
+ggplot(corruptDF, aes(x = CPI2017, y = HDI2017, fill = region, color = region)) +
+  geom_point() +
+  geom_smooth(method = "gam", se = FALSE) +
+  facet_wrap(~region) +
+  labs(x = "CPI", y = "HDI", title = "Relationship Between CPI and HDI in 2017 by Region", subtitle = "Data Points are Associated with Countries", caption = "Sources: Transparency International and United Nations Development Programme") +
+  scale_x_reverse()
+```
+
+## Question 8
+
+```{r}
+ggsave(filename = "CPI_HDI_Scatterplot_2017.pdf")
+
+```
