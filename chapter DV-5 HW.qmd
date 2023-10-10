@@ -1,0 +1,120 @@
+---
+title: dv 5
+author: Terry Moore
+format: html
+embed-resources: true
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+
+# Read in the data 
+#| message: false
+wncaa <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/wncaa.csv")
+
+# Glimpse the data 
+glimpse(wncaa)
+```
+
+Question 1
+
+```{r}
+filter_wncaa <- wncaa |>
+  filter(tourney_finish == "Champ")
+```
+
+```{r}
+tourn_percent <- filter_wncaa |>
+  group_by(school) |>
+  summarise(wins = n() * 100) |>
+  mutate(percentage_w = (wins/sum(wins)) * 100) |>
+  mutate(percentage_w = round(percentage_w, 2)) |>
+  arrange(desc(percentage_w))
+```
+
+```{r}
+ggplot(tourn_percent, aes(x = school, y = percentage_w)) + 
+  geom_col() +
+  coord_flip()
+```
+
+There are two teams that have similar win percentages and the two teams that won the most are Uconn and Tennessee.
+
+Question 2
+
+```{r}
+champ_names <- unique(filter_wncaa$school)
+```
+
+```{r}
+winners <- wncaa %>% 
+  filter(school %in% champ_names)
+```
+
+```{r}
+ggplot(winners, aes(x = reorder(school, seed), y = seed)) +
+         geom_boxplot() +
+  coord_flip()
+```
+
+```{r}
+ggplot(winners, aes(x = seed, y = reorder(school, seed, na.rm=TRUE))) +
+         geom_boxplot(outlier.shape = NA) +
+          geom_jitter() 
+```
+
+Both Uconn and Tennessee had the highest seedings and i was a little suprised to see why Uconn was not higher than Tennessee giving that their win percentages were higher in tournament wins.
+
+```{r}
+ggplot(winners, aes(x = seed, y = reorder(school, seed, na.rm=TRUE), fill = school)) +
+  geom_violin(outlier.shape = NA)+
+  geom_jitter()
+```
+
+I like the box plot because i think that it is easier for me to read compared to the violin plot.
+
+Question 3
+
+```{r}
+ggplot(winners, aes(x = seed, y = reorder(school, seed, na.rm=TRUE))) +
+  geom_point(outlier.shape = NA) +
+  geom_jitter()
+
+```
+
+This is not very effective because the points are all on top of each other.
+
+Question 4
+
+```{r}
+winners_mean_sd <- winners |> 
+  group_by(school) |> 
+  summarize(across(where(is.numeric),
+                   list(mean = mean,
+                        sd = sd)))
+```
+
+```{r}
+ggplot(winners_mean_sd, aes(x = reorder(school, reg_percent_mean), y = reg_percent_mean)) +
+  geom_point() +
+  coord_flip()
+```
+
+Texas A&M was the tournament winner but they had they lowest regular season win percentage and UConn had the highest win percentage in regards to all the other schools.
+
+```{r}
+ggplot(winners_mean_sd, aes(x = reorder(school, reg_percent_mean), y = reg_percent_mean)) +
+  geom_pointrange(aes(ymin = reg_percent_mean - reg_percent_sd,
+                      ymax = reg_percent_mean + reg_percent_sd)) +
+  coord_flip()
+```
+
+Texas A&M has the narrowest interval this indicates that, when compared to the other colleges, the school's  win percentages each season were the closest to its average win percentage.
+
+```{r}
+ggplot(winners_mean_sd, aes(x = reorder(school, reg_percent_mean), y = reg_percent_mean)) + geom_linerange(aes(ymin = reg_percent_mean - reg_percent_sd,                                            ymax = reg_percent_mean + reg_percent_sd))+
+  coord_flip()
+```
+
+I don't quite agree with the idea because there is not a way for me to find the average win percentage.
