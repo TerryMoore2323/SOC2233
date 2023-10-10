@@ -1,0 +1,127 @@
+---
+title: dv 4
+author: Terry Moore
+format: html
+embed-resources: true
+editor: visual
+---
+
+## Question 1
+
+```{r}
+#| message: false
+library(tidyverse)
+
+# Read in the data 
+tv_ratings <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/tv_ratings.csv")
+
+# Glimpse the data 
+glimpse(tv_ratings)
+```
+
+```{r}
+tv_long <- tv_ratings %>% 
+  group_by(title) %>% 
+  summarise(num_seasons = n()) %>% 
+  ungroup() %>% 
+  left_join(tv_ratings, by = "title") 
+
+tv_long <- tv_long %>% 
+  filter(num_seasons >= 5)
+```
+
+```{r}
+ggplot(tv_long, aes(x = seasonNumber, y = av_rating, group = title)) +
+  geom_line()
+```
+
+I can not draw any conclusions from this graph because it is very messy.
+
+## Question 2
+
+```{r}
+ggplot(tv_long, aes(x = seasonNumber, y = av_rating, group = title)) +
+  geom_line() +
+  facet_wrap(~genres)
+```
+
+coord_flip function flips the coordinates from the x axis to the y axis
+
+Question 3
+
+```{r}
+tv_ratings_nine <- tv_ratings |>
+  filter(av_rating >= 9)
+```
+
+```{r}
+ggplot(tv_ratings_nine, aes(x = genres)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(tv_ratings_nine, aes(x = genres)) +
+  geom_bar() +
+  coord_flip()
+```
+
+The cord_flip function flips the coordinates from the x axis to the y axis.
+
+Drama is the genre with the most top rated shows.
+
+Question 4
+
+```{r}
+
+comedies_dramas <- tv_ratings %>% 
+  mutate(is_comedy = if_else(str_detect(genres, "Comedy"), 
+                             1, 
+                             0)) %>% # If it contains the word comedy then 1, else 0
+  filter(is_comedy == 1 | genres == "Drama") %>% # Keep comedies and dramas
+  mutate(genres = if_else(genres == "Drama", # Make it so that we only have those two genres
+                          "Drama", 
+                          "Comedy"))
+
+glimpse(comedies_dramas)
+```
+
+```{r}
+ggplot(comedies_dramas, aes(x = av_rating,
+                            group = genres,
+                            color = genres)) +
+  geom_density()
+```
+
+The Drama genre does have a higher amount of shows that have a higher rating than Comedy..
+
+## Question 5
+
+```{r}
+ggplot(comedies_dramas, aes(x = av_rating,
+                            group = genres,
+                            fill = genres)) +
+  geom_histogram(position = "dodge")
+```
+
+It informs me that there are more comedy shows than drama shows, based on the number of shows that were counted
+
+```{r}
+ggplot(comedies_dramas, aes(x = av_rating,
+                            group = genres,
+                            color = genres)) +
+  geom_freqpoly()
+```
+
+## Question 6
+
+```{r}
+ggplot(comedies_dramas, aes(x = av_rating, y = share)) +
+  geom_bin_2d()
+```
+
+```{r}
+ggplot(comedies_dramas, aes(x = av_rating, y = share, fill = genres)) +
+  geom_bin_2d()
+```
+
+I see that in contrast to the Comedy shows the Drama genres often was dominant in the lower "share" numbers.
