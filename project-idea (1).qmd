@@ -1,0 +1,23 @@
+---
+title: "Project Idea"
+author: "Terry Moore"
+embed-resources: true
+format: html
+editor: visual
+---
+
+## Topic for Project
+
+In my final project, I plan to answer the research question "What factors contribute to the highest Halloween Candy Ranking?" and to answer the question, I plan to use the `candy_rankings` dataset from fivethirtyeight.
+
+```{r}
+#| message: false
+library(tidyverse)
+theme_set(theme_light())
+candy_rankings <- read_csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/candy-power-ranking/candy-data.csv")
+glimpse(candy_rankings)
+```
+
+```{r}
+glimpse(candy_rankings)
+```
