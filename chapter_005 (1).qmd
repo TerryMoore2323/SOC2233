@@ -1,0 +1,299 @@
+---
+title: "MD 5 HW"
+name: Terry Moore
+format: html
+editor: visual
+embed-resources: true
+---
+
+# Chapter 5 - Modern Dive
+
+We are getting into more complex topics, like how to fit and interpret models. In this section, we will use all the tools we have learned - from wrangling to visualization - to make sure we fit appropriate models and that we understand what these models are doing. Models can be powerful inferential tools but they can also be misleading (like anything). It is important that we know what is powering the machinery we are using so that we always know whether to trust the results we get.
+
+In this homework, we are going to be analyzing twitch data. We will learn a couple of tricks for modeling data along the way.
+
+Let's begin by loading the data in our usual way.
+
+```{r}
+library(tidyverse)
+library(broom)
+library(moderndive)
+#| message: false
+twitch_data <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/twitchdata-update.csv")
+```
+
+The names of th variables here are a bit annoying. They are capitalized and have spaces which makes them awkward to work with in R. Let me show you a neat trick. First, install a package called `janitor` if you don't have it yet. Then, let's load it and clean the names.
+
+```{r}
+library(janitor)
+twitch_data <- clean_names(twitch_data)
+
+# Inspect new names
+colnames(twitch_data)
+```
+
+```         
+##  [1] "channel"             "watch_time_minutes"  "stream_time_minutes"
+##  [4] "peak_viewers"        "average_viewers"     "followers"          
+##  [7] "followers_gained"    "views_gained"        "partnered"          
+## [10] "mature"              "language"
+```
+
+Look at how much better they look. We are ready to begin our analysis.
+
+## Question 1
+
+We will begin with an easy question. An almost obvious question. We are going to examine whether the number of followers a streamer has is predictive of the average viewers they get. Following what the chapter told us, let's look at the raw data. Show me the `average_viewers` and the `followers` for five random streamers. What do you notice?
+
+```{r}
+twitch_data |>
+  select(average_viewers, followers) |>
+  sample_n(5)
+```
+
+**Answer:**
+
+For the most part, the more `followers` a streamer had was positively correlated to the `average_viewers` they have.
+
+Now, let's summarize these two variables. An alternative way you get a summary of your variables of interest is by running `summary()` on them. `Select` our two variables of interest and run `summary()`. Describe the results in a few words. Does anything capture your attention?
+
+```{r}
+twitch_data |>
+  select(average_viewers, followers) |>
+  summary(twitch_data)
+```
+
+Okay, lastly - but perhaps most importantly - lets visualize the data. Make a scatterplot with our two variables of interest.
+
+```{r}
+ggplot(twitch_data, aes(x = average_viewers, y = followers)) +
+  geom_point() +
+  labs(title = "Followers & Average Viewership Scatterplot", 
+       x = "Average Viewers", 
+       y = "Followers")
+  
+```
+
+What do you notice?
+
+It is really challenging to assess the key variables because all the data is crammed into the bottom left corner.
+
+Right away, you should notice that the data is packed into a small part of the Cartesian plane. Why?
+
+There is an uneven distribution of the data between the channel followers and average viewers.
+
+Because we have an uneven distribution - a few channels with a lot of followers and a lot of average viewers. So what should we do? We can transform the data. Remember the `scale_x_log10` trick we learned in the last book? Let's apply it. Make the same plot but adding `scale_x_log10` and `scale_y_log10`. What do you see now? How does the relationship look like?
+
+```{r}
+ggplot(twitch_data, aes(x = average_viewers, y = followers)) +
+  geom_point() +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(title = "Followers & Average Viewership via Log Transformation", 
+       x = "Average Viewers", 
+       y = "Followers")
+```
+
+A relationship between the two variables looks more apparent in this scenario because the x-axis is now in a logarithmic format and is easier to visualize the data.
+
+Hopefully you have learned something important here: often the relationship between two variables is not immediately obvious and we need to do some transformations of the data to uncover it. Let's add those transformed variables to our dataset.
+
+```{r}
+twitch_data <- twitch_data %>% 
+  mutate(log_viewers = log10(average_viewers), 
+         log_followers = log10(followers))
+```
+
+## Question 2
+
+Let's actually run a regression. Using `lm()` fit a model where you predict the logarithm of average viewers (`log_viewers`) using the logarithm of followers (`log_followers`). Save the results to an object called `fit1`.
+
+```{r}
+fit1 <- lm(log_viewers ~ log_followers, data = twitch_data) 
+
+get_regression_table(fit1)
+```
+
+I am going to show you another way of getting a summary of your model. First, let's install the `broom` package. After, run `tidy()` on your model object (`fit1`).
+
+```{r}
+broom::tidy(fit1)
+```
+
+Before I have you describe your results I have to tell you that when you transform your variables, interpretation is a bit different. In the situation we are in - where your outcome and explanatory variables have been logged - the coefficients are interpreted as percentage increases. For example, let's say we have a coefficient of $0.4$. We would do the following:
+
+$$ 1.1^{0.4} = 1.03886 $$ And we would interpret our coefficient like this:
+
+> A 10% increase in followers is associated with a 3.9% increase in the average number of viewers.
+
+Now, it's your turn. Take the coefficient from your model and interpret it in this way.
+
+```{r}
+coefficients <- coef(fit1)
+print(coefficients)
+```
+
+$$ 1.1^{0.5884958} = 1.369440825 $$
+
+A 10% increase in followers is associated with a 36.9% increase in the average number of viewers.
+
+## Question 3
+
+Okay, now let's look at our line of best fit and check the residuals. I am again going to introduce you to an incredibly useful tool from the `broom` package called `augment`. Run the following code:
+
+```{r}
+library(broom)
+
+pred_data <- augment(fit1)
+
+# glimpse our new data 
+glimpse(pred_data)
+```
+
+```         
+## Rows: 1,000
+## Columns: 8
+## $ log_viewers   <dbl> 4.442731, 4.408410, 4.040444, 3.887280, 4.471321, 4.6275…
+## $ log_followers <dbl> 6.511388, 6.725108, 6.247393, 6.596030, 6.951284, 6.1940…
+## $ .fitted       <dbl> 4.029761, 4.155534, 3.874400, 4.079572, 4.288638, 3.8430…
+## $ .resid        <dbl> 0.4129697, 0.2528757, 0.1660436, -0.1922928, 0.1826833, …
+## $ .hat          <dbl> 0.006194481, 0.008694557, 0.003782169, 0.007126066, 0.01…
+## $ .sigma        <dbl> 0.3085580, 0.3087321, 0.3087919, 0.3087764, 0.3087820, 0…
+## $ .cooksd       <dbl> 0.0056128779, 0.0029688873, 0.0005513456, 0.0014026033, …
+## $ .std.resid    <dbl> 1.3420109, 0.8227954, 0.5389316, -0.6251793, 0.5953620, …
+```
+
+Look, it's our original data but also a bunch more information. The `.fitted` column includes our predictions given our line of best fit. `.resid` contans the residuals. Let's visualize our line of best fit:
+
+```{r}
+pred_data %>% 
+  ggplot(aes(x = log_followers, 
+             y = log_viewers)) +
+  geom_jitter(alpha = 0.4) + 
+  geom_line(aes(x = log_followers, y = .fitted), col = "orange") +
+  theme_minimal() +
+  labs(subtitle = "Fitted Model and Raw Data", 
+       title = "Followers & Average Viewership", 
+       x = "log(followers)", 
+       y = "log(viewers)")
+```
+
+![](chapter_05_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
+Do you think our model describes the relationship well?
+
+**Answer:**
+
+I think that it is describing the relationship as there is a high concentration of data points close to the line of best fit.
+
+Now, you fit a plot where `log_followers` is in the x-axis and `.resid` is in the y-axis.
+
+```{r}
+pred_data %>% 
+  ggplot(aes(x = log_followers, 
+             y = .resid)) +
+  geom_jitter(alpha = 0.4) + 
+  geom_smooth(method = lm, se = FALSE, col = "orange") +
+  theme_minimal() +
+  labs(subtitle = "Residual Model and Raw Data", 
+       title = "Followers & Residuals", 
+       x = "log(followers)", 
+       y = "residuals)")
+```
+
+What do you see? Are there any big residuals? DO they happen often in a particular range of our x-variable? If so, we would have a problem: our model would systematically fail to predict part of our data.
+
+**Answer:**
+
+I see that this chart is providing a fair visualization of the number of the streamers' followers from the dataset. There a few big residuals that are sprinkled on the chart like the twitch streamer that is close to the `log(followers)` value of 4.
+
+## Question 4
+
+Let's now look at regression using one categorical variable to predict one continuous variable. Here, I am interested in whether `language` predicts `average_viewers`. This would give us an indication of where the most popular twitch channels come from. I have a hunch that English streamers might be the most popular. Let's see.
+
+First, describe our variables of interest as we did above. I am going to give you less guidance here. I want you to explore:
+
+1)  The raw data
+
+```{r}
+twitch_data |>
+  select(average_viewers, followers) |>
+  sample_n(5)
+```
+
+```{r}
+twitch_data |>
+  group_by(language) |>
+  summarize(count = n()) |>
+  arrange(desc(count))
+```
+
+English is the most used language.
+
+1)  Summaries of the variables
+
+```{r}
+twitch_data |>
+  select(language, average_viewers) |>
+  summary(twitch_data)
+```
+
+There are 1000 streamers that are tracked using the "`language`" variable and the streamers have an average of 4781 viewers. There is a wide spectrum of "`average_viewers`" though with the lower end being 235 and the higher side being 147643.
+
+1)  Plot the variables
+
+```{r}
+ggplot(twitch_data, aes(x = log_viewers, y = language)) +
+  geom_boxplot(outlier.shape = NA) +
+  scale_x_log10() +
+  labs(title = "Average Viewership by Language Plot", 
+       x = "Average Viewers", 
+       y = "Language")
+```
+
+Spanish and Arabic have the highest average viewers out of all the languages and on the lower end of the spectrum were Swedish, Finnish, Thai, and Czech.
+
+## Question 5
+
+Now, we are ready to fit the model. Fit a linear regression where your outcome variable is `average_viewers` and your independent variable is `language`. Let me teach you another trick here. When your categorical variable has many categories it makes sense to establish your reference category *outside of the model*. This ensures that, when you are reading your coefficients, you know what you are comparing them to. Let's set `English` as our reference category.
+
+```{r}
+twitch_data <- twitch_data %>% 
+  mutate(language = as.factor(language), 
+         language = relevel(language, ref = "English"))
+```
+
+Now, fit your model. Your coefficients will tell you how many more (or fewer) average viewers are related to streaming in languages different than English. Interpret the results. How is my prediction doing?
+
+```{r}
+fit2 <- lm(average_viewers ~ language, data = twitch_data)
+
+broom::tidy(fit2)
+```
+
+```{r}
+coefficients <- coef(fit2)
+print(coefficients)
+```
+
+**Answer:**
+
+This shows that there are plenty of languages, such as Arabic, that have more `average_viewers` than English which means that your prediction is wrong.
+
+## Question 6
+
+Explore the residuals here using a similar plot as above. There are a couple of points our model really missed - which ones were they?
+
+```{r}
+pred_data2 <- augment(fit2)
+
+pred_data2 |>
+  ggplot(aes(x = average_viewers,
+             y = .resid)) +
+  geom_jitter() +
+  geom_line(aes(x = average_viewers, y = .fitted), col = "orange") +
+  scale_x_log10() +
+  labs(title = "Log Transformed Average Viewership vs. Residuals Plot", x = "Average Viewership", y = "Residuals")
+```
+
+The main point missed were the streamers who had more than 1e+05 (31,000) possessed a large residual value.
