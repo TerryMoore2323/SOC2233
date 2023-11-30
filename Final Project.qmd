@@ -1,0 +1,56 @@
+---
+title: "Project Idea"
+author: "Terry Moore"
+embed-resources: true
+format: html
+editor: visual
+---
+
+## Topic for Final Project
+
+In my final project, I plan to answer the research question "What factors contribute to the highest Halloween Candy Ranking?" and to answer the question, I plan to use the `candy_rankings` dataset from fivethirtyeight.
+
+```{r}
+#| message: false
+library(tidyverse)
+theme_set(theme_light())
+candy_rankings <- read_csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/candy-power-ranking/candy-data.csv")
+glimpse(candy_rankings)
+```
+
+(Top 30 candies)
+
+```{r}
+candy_rankings%>%
+  top_n(30, winpercent)%>%
+ggplot(aes(x = reorder(competitorname, -winpercent), y = winpercent)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Win Percent by Candy Type", x = "Candy Type", y = "Win Percent")
+```
+
+(Bottom 30 candies)
+
+```{r}
+sorted_candy <- candy_rankings%>%
+  arrange(winpercent)
+
+# Select the 30 lowest winpercent values
+lowest_winpercent <- head(sorted_candy, 30)
+
+lowest_winpercent%>%
+ggplot(aes(x = reorder(competitorname, -winpercent), y = winpercent)) +
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.7) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Win Percent by Candy Type", x = "Candy Type", y = "Win Percent")
+```
+
+(Sugar vs Price)
+
+```{r}
+candy_rankings%>%
+  ggplot(aes(x = sugarpercent, y = pricepercent)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  labs(title = "Sugar Percent vs. Price Percent", x = "Sugar Percent", y = "Price Percent")
+```
